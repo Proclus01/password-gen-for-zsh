@@ -1,6 +1,6 @@
 # Instructions
 
-Copy the script from the *script.sh* file and paste it into your *.zshrc* inside your main Mac OS directory. 
+Copy the script from the *makepw.sh* file and paste it into your *.zshrc* inside your main Mac OS directory. 
 
 Open a new terminal window
 
