@@ -48,19 +48,27 @@ Given that \(N = 94\) for this function, let's calculate the entropy for each re
 
 1. **For a 20-character password:**
 
-\[ \text{Entropy} = 20 \times \log_2(94) \approx 20 \times 6.5546 = 131.092 \text{ bits} \]
+```
+Entropy = 20 * log2(94) ≈ 20 * 6.5546 = 131.092 bits
+```
 
 2. **For a 30-character password:**
 
-\[ \text{Entropy} = 30 \times \log_2(94) \approx 30 \times 6.5546 = 196.638 \text{ bits} \]
+```
+Entropy = 30 * log2(94) ≈ 30 * 6.5546 = 196.638 bits
+```
 
 3. **For a 128-character password:**
 
-\[ \text{Entropy} = 128 \times \log_2(94) \approx 128 \times 6.5546 = 839.189 \text{ bits} \]
+```
+Entropy = 128 * log2(94) ≈ 128 * 6.5546 = 839.189 bits
+```
 
 4. **For a 512-character password:**
 
-\[ \text{Entropy} = 512 \times \log_2(94) \approx 512 \times 6.5546 = 3356.755 \text{ bits} \]
+```
+Entropy = 512 * log2(94) ≈ 512 * 6.5546 = 3356.755 bits
+```
+
 
 These entropy values indicate the level of security provided by the passwords, with higher values representing stronger passwords. The calculations show that as the length of the password increases, the entropy, and thus the security, increases significantly.
-![image](https://github.com/Proclus01/password-gen-for-zsh/assets/95269427/cead2570-26d4-4eff-9637-35982dfa5874)
