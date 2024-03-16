@@ -100,8 +100,8 @@ As you can see, each individual password may not use the entire 94-length charac
 
 ### Password 1: Umy62B9m1nL,'9f7rHpI4yN>)pG~OolKYq
 
-- Length (^$L$^): 31 characters
-- Unique characters (^$N$^): Let's count.
+- Length (L): 31 characters
+- Unique characters (N): Let's count.
 
 Assuming each character is unique for simplicity in this example, but normally you'd count each distinct character once.
 
@@ -112,7 +112,7 @@ Assuming each character is unique for simplicity in this example, but normally y
 
 Total unique characters: 12 (uppercase) + 10 (lowercase) + 4 (digits) + 6 (special) = 32
 
-^$ \text{Entropy} = 31 \times \log_2(32) = 31 \times 5 = 155 \text{ bits} $^
+Entropy = 31 * log2(32) = 31 * 5 = 155 bits
 
 (Note: The calculation assumes each character is unique for demonstration. The actual count of unique characters should exclude duplicates.)
 
