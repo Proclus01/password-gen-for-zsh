@@ -2,6 +2,8 @@
 
 Copy the script from the *makepw.sh* file and paste it into your *.zshrc* inside your main Mac OS directory. 
 
+Alternatively you can set it as a bash script anywhere you wish and run it from the terminal in the same way below (with some config on the user end):
+
 Open a new terminal window
 
 And run the script using these instructions:
