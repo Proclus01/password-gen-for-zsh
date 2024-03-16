@@ -85,7 +85,7 @@ So, each of these passwords, assuming they were generated in a truly random mann
 The real information entropy values may be lower or higher:
 
 ***
-makepw -n 15 35
+makepw -n 5 35
 
 [Umy62B9m1nL,'9f7rHpI4yN>)pG~OolKYq
 
@@ -93,33 +93,26 @@ makepw -n 15 35
 
 N4$O)9L?X*OL]E%k^&agMZVPDVAT}t:eR~z
 
-'-NlN2$m*3rX;exr}C0z+yR"=z=0D3t!^Sd
-
--u@0*9#4dI+LerUXyI]ZERZr@Auk1g]Rr>o
-
-/o2_91a7|[yRL.at'`k7^(_oe(dFGFnnh{e
-
-F7x*o8=sg"4Q?\~Y7!5C{G>uxf`{@i^c9zp
-
-lHlP87g[qNzUSw*snHa~~?m>9^jon5z
-
-}b\J2!@{5|CGEql'.nHYd4+fA=G<(mQPWd
-
-ikG2:8zq9jaXfzVfqp|k1i)DAd44~/e|nCo
-
-g5,X160"-0MS?Ln-q2@CUY"~pe&4Pz*\{%k
-
-5$)Vv2r=2%pStI8Z-q=.Gcr{QC[)D5Kip9b
-
-vZSsZ7f'x~=Jz^c{[cX~N,0`[d"G{J\)+wk
-
-gi>i_4Gdc}XB`;4E`OyX^gY"'mW2X@NYYsk
-
-F|FP26IQ\CFH3mAl10Fd5O@Qe&8~EZX|V`g
-
 ...
 ***
 
 As you can see, each individual password may not use the entire 94-length character set (especially if Password Length < 94).
 
+### Password 1: Umy62B9m1nL,'9f7rHpI4yN>)pG~OolKYq
+
+- Length (^$L$^): 31 characters
+- Unique characters (^$N$^): Let's count.
+
+Assuming each character is unique for simplicity in this example, but normally you'd count each distinct character once.
+
+- Uppercase: A, B, G, H, I, K, L, N, O, P, U, Y
+- Lowercase: f, g, l, m, n, o, p, q, r, y
+- Digits: 1, 2, 6, 9
+- Special Characters: ',', '>', ')', '~', '[', ']'
+
+Total unique characters: 12 (uppercase) + 10 (lowercase) + 4 (digits) + 6 (special) = 32
+
+^$ \text{Entropy} = 31 \times \log_2(32) = 31 \times 5 = 155 \text{ bits} $^
+
+(Note: The calculation assumes each character is unique for demonstration. The actual count of unique characters should exclude duplicates.)
 
