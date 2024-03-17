@@ -8,31 +8,31 @@ Open a new terminal window
 
 And run the script using these instructions:
 
-***
+```
 makepw
-***
+```
 
 It defaults to a 20-character password. 
 
 To generate to a specific length X = 112:
 
-***
+```
 makepw 112
-***
+```
 
 To generate multiple instances of fresh passwords of a certain length, use the following:
 
-***
+```
 makepw -n 5
-***
+```
 
 This makes 5 instances of default-length passwords.
 
 To generate multiple instances of custom-length passwords, for X = 35, use the following:
 
-***
+```
 makepw -n 5 35
-***
+```
 
 Which makes you 5 instances of 35-length passwords. 
 
@@ -84,7 +84,7 @@ So, each of these passwords, assuming they were generated in a truly random mann
 
 The real information entropy values may be lower or higher:
 
-***
+```
 makepw -n 5 35
 
 [Umy62B9m1nL,'9f7rHpI4yN>)pG~OolKYq
@@ -94,11 +94,11 @@ makepw -n 5 35
 N4$O)9L?X*OL]E%k^&agMZVPDVAT}t:eR~z
 
 ...
-***
+```
 
 As you can see, each individual password may not use the entire 94-length character set (especially if Password Length < 94).
 
-### Password 1: Umy62B9m1nL,'9f7rHpI4yN>)pG~OolKYq
+### Password 1: `Umy62B9m1nL,'9f7rHpI4yN>)pG~OolKYq`
 
 - Length (L): 31 characters
 - Unique characters (N): Let's count.
@@ -112,7 +112,9 @@ Assuming each character is unique for simplicity in this example, but normally y
 
 Total unique characters: 12 (uppercase) + 10 (lowercase) + 4 (digits) + 6 (special) = 32
 
+```
 Entropy = 31 * log2(32) = 31 * 5 = 155 bits
+```
 
 (Note: The calculation assumes each character is unique for demonstration. The actual count of unique characters should exclude duplicates.)
 
