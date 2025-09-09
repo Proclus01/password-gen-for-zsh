@@ -1,69 +1,93 @@
-# BRIEF INSTRUCTIONS ON USE:
-
 # makepw: cryptographically strong password generator for Zsh
 # Usage:
 #   makepw                 # one 20-char password
 #   makepw 25              # one 25-char password
 #   makepw -n 5            # five 20-char passwords
 #   makepw -n 5 35         # five 35-char passwords
+#   makepw -h|--help       # show help
 
 makepw() {
-  emulate -L zsh                      # keep options local and Zsh semantics
-  set -o pipefail
+  emulate -L zsh                       # localize options & use Zsh semantics
+  setopt pipefail                      # propagate pipeline failures
 
-  local count=1
-  local length=20
+  # --- defaults ---
+  local -i count=1
+  local -i length=20
 
-  # Parse -n COUNT
+  # Pin locale for both pattern classes and tr (predictable ASCII classes).
+  local LC_ALL=C LANG=C
+
+  # --- usage helper ---
+  local _usage=$'makepw: cryptographically strong password generator\n\n'\
+'Usage:\n'\
+'  makepw                 # one 20-char password\n'\
+'  makepw 25              # one 25-char password\n'\
+'  makepw -n 5            # five 20-char passwords\n'\
+'  makepw -n 5 35         # five 35-char passwords\n'\
+'  makepw -h|--help       # show this help\n'
+
+  # --- parse args (backward-compatible) ---
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    printf '%s' "$_usage"
+    return 0
+  fi
+
   if [[ "$1" == "-n" && "$2" == <-> ]]; then
     count=$2
     shift 2
   fi
 
-  # Trailing LENGTH
   if [[ "$1" == <-> ]]; then
     length=$1
     shift
   fi
 
-  # Validate inputs
+  if (( $# > 0 )); then
+    printf 'makepw: unexpected arguments: %s\n' "$*" >&2
+    printf '%s' "$_usage" >&2
+    return 2
+  fi
+
+  # --- validate ---
   if (( count < 1 )); then
-    print -u2 "makepw: count must be >= 1"
+    printf 'makepw: count must be >= 1\n' >&2
     return 1
   fi
   if (( length < 1 )); then
-    print -u2 "makepw: length must be >= 1"
+    printf 'makepw: length must be >= 1\n' >&2
     return 1
   fi
 
-  # Allowed character set: all printable non-space ASCII (94 symbols).
-  # In C locale, '[:alnum:]' + '[:punct:]' = letters + digits + punctuation.
-  # We read from /dev/urandom indefinitely and let head stop after 'length'.
-  for ((i=1; i<=count; i++)); do
-    local pw=""
+  # --- generator ---
+  # Allowed set: printable non-space ASCII (letters, digits, punctuation) -> 94 chars.
+  # We sample uniformly via /dev/urandom filtered by tr; diversity enforced by rejection.
+  local pw
+  local -i i
+  for (( i = 1; i <= count; i++ )); do
     if (( length >= 4 )); then
-      # Rejection sampling: generate until diversity constraints are satisfied.
+      # Rejection sampling: draw until all four classes appear.
       while true; do
-        pw=$(LC_ALL=C tr -dc '[:alnum:][:punct:]' < /dev/urandom | head -c "$length")
-        # Diversity checks; Zsh pattern classes are locale-aware; force C.
-        if [[ -n "$pw" ]] \
-           && [[ "$pw" == *[[:upper:]]* ]] \
-           && [[ "$pw" == *[[:lower:]]* ]] \
-           && [[ "$pw" == *[[:digit:]]* ]] \
-           && [[ "$pw" == *[[:punct:]]* ]]; then
-          break
-        fi
+        # Sample exactly $length characters from the 94-char set.
+        pw=$(tr -dc '[:alnum:][:punct:]' < /dev/urandom | head -c "$length")
+        # Ensure we actually got $length characters (belt-and-suspenders).
+        (( ${#pw} == length )) || continue
+        # Diversity check using POSIX classes in C locale.
+        [[ $pw == *[[:upper:]]* ]] || continue
+        [[ $pw == *[[:lower:]]* ]] || continue
+        [[ $pw == *[[:digit:]]* ]] || continue
+        [[ $pw == *[[:punct:]]* ]] || continue
+        break
       done
     else
-      # For length 1–3 it is impossible to include all 4 classes.
-      # We still sample uniformly from the 94-character set.
-      pw=$(LC_ALL=C tr -dc '[:alnum:][:punct:]' < /dev/urandom | head -c "$length")
-      # Ensure 'head' delivered the full length (it should, but be safe).
-      while [[ ${#pw} -lt $length ]]; do
-        pw+=$(LC_ALL=C tr -dc '[:alnum:][:punct:]' < /dev/urandom | head -c $((length - ${#pw})))
+      # For length 1–3, diversity of 4 classes is impossible—just sample uniformly.
+      # Loop until we have the requested length (highly likely on first pass).
+      while true; do
+        pw=$(tr -dc '[:alnum:][:punct:]' < /dev/urandom | head -c "$length")
+        (( ${#pw} == length )) && break
       done
     fi
-    # Print without interpreting backslashes; avoid echo oddities.
-    print -- "$pw"
+
+    # PRINT SAFELY: no escape processing; never interpret backslashes, percents, etc.
+    printf '%s\n' "$pw"
   done
 }
