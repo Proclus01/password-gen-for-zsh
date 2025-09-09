@@ -5,8 +5,11 @@
 #   makepw -n 5              # five 20-char passwords
 #   makepw -n 5 35           # five 35-char passwords
 #   makepw --no-punct        # letters+digits only
-#   makepw --alnum-only      # same as --no-punct (alias)
+#   makepw --alnum-only      # alias of --no-punct
+#   makepw --letters-only    # letters only (A–Z, a–z)
+#   makepw --no-digit        # exclude digits
 #   makepw --avoid-ambiguous # exclude O 0 I l 1 |
+#   makepw --no-diversity    # do not require class diversity
 #   makepw --clipboard       # (macOS) copy to clipboard with confirmation
 #   makepw -h | makepw --help
 #
@@ -21,9 +24,13 @@ makepw() {
   # ---- defaults ----
   local -i count=1
   local -i length=20
+  local -i include_upper=1
+  local -i include_lower=1
+  local -i include_digit=1
   local -i include_punct=1
   local -i avoid_ambiguous=0
   local -i use_clipboard=0
+  local -i enforce_diversity=1
 
   # Pin ASCII semantics for classes both in shell patterns and tr
   local LC_ALL LANG
@@ -38,7 +45,10 @@ makepw() {
 '  makepw -n 5 35           # five 35-char passwords\n'\
 '  makepw --no-punct        # letters+digits only\n'\
 '  makepw --alnum-only      # alias of --no-punct\n'\
+'  makepw --letters-only    # letters only (A–Z, a–z)\n'\
+'  makepw --no-digit        # exclude digits\n'\
 '  makepw --avoid-ambiguous # exclude O 0 I l 1 |\n'\
+'  makepw --no-diversity    # no class requirements (pure uniform)\n'\
 '  makepw --clipboard       # (macOS) copy to clipboard with confirmation\n'\
 '  makepw -h | makepw --help\n\n'\
 'Notes:\n'\
@@ -74,8 +84,17 @@ makepw() {
       --no-punct|--alnum-only)
         include_punct=0; shift
         ;;
+      --letters-only)
+        include_digit=0; include_punct=0; shift
+        ;;
+      --no-digit)
+        include_digit=0; shift
+        ;;
       --avoid-ambiguous)
         avoid_ambiguous=1; shift
+        ;;
+      --no-diversity)
+        enforce_diversity=0; shift
         ;;
       --clipboard|--clip)
         use_clipboard=1; shift
@@ -110,21 +129,29 @@ makepw() {
     return 1
   fi
 
-  # ---- configure character set for tr ----
-  local tr_filter
-  if (( include_punct )); then
-    tr_filter='[:alnum:][:punct:]'   # 94 printable ASCII
-  else
-    tr_filter='[:alnum:]'            # 62 ASCII letters+digits
+  # ---- build tr filter from included classes ----
+  local tr_filter=""
+  (( include_upper )) && tr_filter+='[:upper:]'
+  (( include_lower )) && tr_filter+='[:lower:]'
+  (( include_digit )) && tr_filter+='[:digit:]'
+  (( include_punct )) && tr_filter+='[:punct:]'
+
+  if [[ -z $tr_filter ]]; then
+    printf 'makepw: character set is empty; check your flags.\n' >&2
+    return 2
   fi
 
-  # Diversity rule: require one of each included class
-  local -i need_upper=1 need_lower=1 need_digit=1 need_punct=0
-  (( include_punct )) && need_punct=1
-  local -i required_classes=$(( need_upper + need_lower + need_digit + need_punct ))
+  # ---- diversity requirements derived from included classes ----
+  local -i need_upper=0 need_lower=0 need_digit=0 need_punct=0
+  if (( enforce_diversity )); then
+    (( include_upper )) && need_upper=1
+    (( include_lower )) && need_lower=1
+    (( include_digit )) && need_digit=1
+    (( include_punct )) && need_punct=1
+  fi
 
-  if (( length < required_classes )); then
-    # Too short to satisfy all required classes—fall back to uniform sampling.
+  local -i required_classes=$(( need_upper + need_lower + need_digit + need_punct ))
+  if (( enforce_diversity && length < required_classes )); then
     printf 'makepw: note: length (%d) < required classes (%d); diversity check skipped.\n' \
       "$length" "$required_classes" >&2
     need_upper=0; need_lower=0; need_digit=0; need_punct=0
@@ -150,7 +177,7 @@ makepw() {
         pw+="$chunk"
       done
 
-      # --- IMPORTANT FIX: Zsh-native substring (avoid ${pw:0:length}) ---
+      # Zsh-native substring (avoid ${pw:0:length})
       pw="${pw[1,$length]}"
 
       # Diversity checks (only for included classes)
@@ -165,8 +192,7 @@ makepw() {
     done
 
     pwlist+=("$pw")
-    # Escape-safe output (no backslash interpretation)
-    printf '%s\n' "$pw"
+    printf '%s\n' "$pw"   # escape-safe output
   done
 
   # ---- optional clipboard copy (macOS) ----
