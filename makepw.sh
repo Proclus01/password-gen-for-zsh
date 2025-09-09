@@ -9,10 +9,14 @@
 #   makepw --avoid-ambiguous # exclude O 0 I l 1 |
 #   makepw --clipboard       # (macOS) copy to clipboard with confirmation
 #   makepw -h | makepw --help
+#
+# Note: do NOT type a pipe between -h and --help; use either:
+#   makepw -h
+#   makepw --help
 
 makepw() {
   emulate -L zsh
-  setopt pipefail
+  setopt pipefail extendedglob
 
   # ---- defaults ----
   local -i count=1
@@ -21,8 +25,9 @@ makepw() {
   local -i avoid_ambiguous=0
   local -i use_clipboard=0
 
-  # Pin locale for predictable ASCII classes
-  local LC_ALL=C LANG=C
+  # Pin ASCII semantics for classes both in shell patterns and tr
+  local LC_ALL LANG
+  LC_ALL=C; LANG=C
 
   # ---- help text ----
   local _usage=$'makepw: cryptographically strong password generator\n\n'\
@@ -53,7 +58,7 @@ makepw() {
         if [[ "$1" == <-> ]]; then
           count=$1; shift
         else
-          printf 'makepw: %s requires an integer\n' "${${(q)0}:--count}" >&2
+          printf 'makepw: -n/--count requires an integer\n' >&2
           return 2
         fi
         ;;
@@ -89,7 +94,7 @@ makepw() {
     esac
   done
 
-  # no extra args expected
+  # No extra args expected
   if (( $# > 0 )); then
     printf 'makepw: unexpected arguments: %s\n' "$*" >&2
     return 2
@@ -105,7 +110,7 @@ makepw() {
     return 1
   fi
 
-  # ---- configuration of character set ----
+  # ---- configure character set for tr ----
   local tr_filter
   if (( include_punct )); then
     tr_filter='[:alnum:][:punct:]'   # 94 printable ASCII
@@ -113,17 +118,15 @@ makepw() {
     tr_filter='[:alnum:]'            # 62 ASCII letters+digits
   fi
 
-  # Ambiguous characters to exclude (when requested)
-  local ambiguous='O0Il1|'
-
   # Diversity rule: require one of each included class
   local -i need_upper=1 need_lower=1 need_digit=1 need_punct=0
   (( include_punct )) && need_punct=1
-
   local -i required_classes=$(( need_upper + need_lower + need_digit + need_punct ))
+
   if (( length < required_classes )); then
     # Too short to satisfy all required classes—fall back to uniform sampling.
-    printf 'makepw: note: length (%d) < required classes (%d); diversity check skipped.\n' "$length" "$required_classes" >&2
+    printf 'makepw: note: length (%d) < required classes (%d); diversity check skipped.\n' \
+      "$length" "$required_classes" >&2
     need_upper=0; need_lower=0; need_digit=0; need_punct=0
     required_classes=0
   fi
@@ -138,15 +141,17 @@ makepw() {
       pw=""
       # Fill to exact length with a uniformly filtered stream.
       while (( ${#pw} < length )); do
-        # Read a large chunk to amortize syscalls; then filter.
-        chunk=$(head -c 32768 /dev/urandom | LC_ALL=C tr -dc "$tr_filter")
+        # Read a decent chunk to amortize syscalls; then filter.
+        chunk=$(command head -c 32768 /dev/urandom | LC_ALL=C command tr -dc "$tr_filter")
         if (( avoid_ambiguous )); then
           # Drop ambiguous characters; top up again if needed.
-          chunk=$(printf '%s' "$chunk" | LC_ALL=C tr -d "$ambiguous")
+          chunk=$(printf '%s' "$chunk" | LC_ALL=C command tr -d 'O0Il1|')
         fi
         pw+="$chunk"
       done
-      pw="${pw:0:length}"
+
+      # --- IMPORTANT FIX: Zsh-native substring (avoid ${pw:0:length}) ---
+      pw="${pw[1,$length]}"
 
       # Diversity checks (only for included classes)
       local -i ok=1
@@ -159,23 +164,21 @@ makepw() {
       # else: rejection sampling—draw again
     done
 
-    pwlist+="$pw"
-    # Print safely (no escape interpretation)
+    pwlist+=("$pw")
+    # Escape-safe output (no backslash interpretation)
     printf '%s\n' "$pw"
   done
 
   # ---- optional clipboard copy (macOS) ----
   if (( use_clipboard )); then
     if command -v pbcopy >/dev/null 2>&1; then
-      local joined="${(j:\n:)pwlist}"
       local answer=""
-      # Prompt on a TTY; fall back to skipping copy if no TTY.
       if [[ -r /dev/tty ]]; then
         printf 'Copy the generated password(s) to your clipboard? [y/N] ' > /dev/tty
         IFS= read -r answer < /dev/tty || answer=""
       fi
       if [[ $answer == [Yy]* ]]; then
-        printf '%s' "$joined" | pbcopy
+        printf '%s\n' "${pwlist[@]}" | pbcopy
         printf 'makepw: copied %d password(s) to clipboard.\n' "$count" >&2
       else
         printf 'makepw: skipped clipboard copy.\n' >&2
