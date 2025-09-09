@@ -17,6 +17,12 @@ makepw          # one 20-character password
 makepw 112      # one 112-character password
 makepw -n 5     # five 20-character passwords
 makepw -n 5 35  # five 35-character passwords
+makepw --letters-only 24             # only A–Z a–z
+makepw --no-digit 32                 # letters + punctuation (no digits)
+makepw --alnum-only 24               # letters + digits (no punctuation)
+makepw --no-diversity 16             # pure uniform from chosen set
+makepw --avoid-ambiguous --alnum-only 20
+makepw -n 5 --letters-only --clipboard
 ```
 
 > **Note:** Some sites restrict which punctuation is allowed. This generator intentionally uses the full printable set. If a site rejects a password, re‑generate or temporarily reduce the character set for that site (you can modify the `tr` pattern to `'[:alnum:]'` or a custom subset).
